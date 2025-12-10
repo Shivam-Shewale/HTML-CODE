@@ -1,230 +1,563 @@
-<html>
-	<head>
-		<!-- Author: Alpesh -->
-		<title>
-			Musical
-		</title>
-		<style>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Realistic 88-Key Piano — Multi-Voice Presets (Single HTML)</title>
+<style>
+:root{
+  --white-w:52px; --white-h:300px; --black-w:34px; --black-h:190px; --gap:6px;
+  --wood-1:#3b2f25; --wood-2:#553f31; --accent:#d9c9b6; --bg:#0b0f14;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#07101a,var(--bg));font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#f6f6f6}
+.page{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px}
+.piano-frame{
+  width:min(96vw,1320px); background:linear-gradient(90deg,var(--wood-1),var(--wood-2));
+  border-radius:14px;padding:22px; box-shadow:0 30px 80px rgba(3,8,15,0.7); border:1px solid rgba(255,255,255,0.03);
+  display:flex;flex-direction:column;gap:12px;
+}
+.header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:34px;border-radius:6px;background:rgba(255,255,255,0.03);display:grid;place-items:center;font-weight:700;color:var(--accent)}
+.title{font-size:16px;font-weight:700}
+.subtitle{font-size:12px;color:#d6cdbf;opacity:0.95}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.select, .btn{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.06));border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;color:var(--accent);cursor:pointer}
+.hint{color:#b6c0cb;font-size:13px}
+.keyboard-viewport{width:100%;overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px; border-radius:8px}
+.keyboard{position:relative;height:var(--white-h);min-width:calc((var(--white-w)+var(--gap))*52);display:flex;align-items:flex-start;padding:6px;gap:var(--gap);user-select:none}
+.key.white{width:var(--white-w);height:var(--white-h);background:linear-gradient(180deg,#fffffe,#eae9e6);border-radius:8px;box-shadow:0 12px 24px rgba(3,8,15,0.25), inset -1px 0 rgba(0,0,0,0.06);position:relative;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;transition:transform .06s,box-shadow .06s;border:1px solid rgba(0,0,0,0.06)}
+.key.white.playing{transform:translateY(6px);box-shadow:0 4px 10px rgba(3,8,15,0.35)}
+.white-label{font-size:12px;color:#222;margin-bottom:10px;opacity:.86;pointer-events:none}
+.key.black{width:var(--black-w);height:var(--black-h);background:linear-gradient(180deg,#0b0b0b,#1a1a1a);border-radius:8px;position:absolute;top:6px;z-index:6;box-shadow:0 12px 22px rgba(0,0,0,0.7);display:flex;align-items:flex-end;justify-content:center;cursor:pointer;transition:transform .06s}
+.key.black.playing{transform:translateY(8px);box-shadow:0 4px 8px rgba(0,0,0,0.7)}
+.controls-right{display:flex;gap:10px;align-items:center}
+.rim{width:100%;height:18px;margin-top:10px;border-radius:8px;background:linear-gradient(180deg,rgba(0,0,0,0.25),rgba(255,255,255,0.02));box-shadow:inset 0 4px 12px rgba(0,0,0,0.5)}
+@media (max-width:1100px){:root{--white-w:44px;--white-h:260px;--black-w:28px;--black-h:160px;--gap:5px}}
+@media (max-width:720px){:root{--white-w:36px;--white-h:200px;--black-w:24px;--black-h:130px;--gap:4px;--panel-pad:14px}}
+kbd.short{font-family:monospace;background:rgba(0,0,0,0.18);padding:2px 6px;border-radius:4px;font-size:12px;color:#fff}
+.small{font-size:13px;color:#d6cdbf}
+.center{display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="piano-frame" role="application" aria-label="Virtual piano with multiple sound presets">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">P</div>
+        <div>
+          <div class="title">Classic HTML Piano — Multi-Voice</div>
+          <div class="subtitle">88 keys, responsive, many piano/tine presets — pure single-file HTML</div>
+        </div>
+      </div>
 
-		body {
-			background: linear-gradient(to top left,#f00,#0a4ca5);
-		}
+      <div class="controls">
+        <label class="small center">Voice:
+          <select id="presetSelect" class="select" title="Choose piano type"></select>
+        </label>
 
-		#container {
-			display: inline-block;
-			position: fixed;
-			top: 0;
-			bottom: 0;
-			left: 0;
-			right: 0;
-			width: 1590px;
-			height: 320px;
-			margin: auto;
-		}
+        <button id="reverbBtn" class="btn" title="Toggle reverb">Reverb: On</button>
+        <label class="small center">Sustain:
+          <button id="sustainBtn" class="btn">Off</button>
+        </label>
+        <button id="stopBtn" class="btn">Stop All</button>
+        <div class="hint">Space toggles sustain • Keyboard mapping shown below</div>
+      </div>
+    </div>
 
-		#containerW, #containerB{
-			position: absolute;
-			top: 0px;
-			left: 0px;
-		}
+    <div class="keyboard-viewport" id="viewport" tabindex="0" aria-label="Keyboard viewport">
+      <div class="keyboard" id="keyboard" aria-hidden="false"></div>
+    </div>
 
-		.keyWhite {
-			background-color: #FFF;
-			height: 300px;
-			width: 70px;
-			float: left;
-			margin-left: 5px;
-		/*	box-shadow: 0px 0px 15px #FFF;	*/
-		}
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div class="small">Keys: <kbd class="short">Z S X D C V G B H N J M ,</kbd> (lower) • <kbd class="short">Q 2 W 3 E R 5 T 6 Y 7 U I 9 O</kbd> (upper)</div>
+      <div class="small">Preset examples: German Grand, Fortepiano, Silent Piano, Rhodes, Square, Prepared, Tack, Barrel, Harpsichord</div>
+    </div>
 
-		.keyBlack {
-			background-color: #000;
-			height: 180px;
-			width: 50px;
-			float: left;
-			margin-left: 25px;
-		}
+    <div class="rim" aria-hidden="true"></div>
+  </div>
+</div>
 
-		.keyBlack:nth-child(1) {
-			margin-left: 51px;
-		}
+<script>
+/* =========================
+   Piano with many synthesized presets
+   - Single HTML file
+   - Uses WebAudio synthesis + procedural IR (no external assets)
+   - Multiple presets emulate different world/period pianos:
+     German Grand, Steinway-like, Fortepiano, Silent/Muted, Rhodes, Square, Prepared, Tack, Barrel, Harpsichord
+   - Each preset adjusts partials, hammer noise, metallicness, body filter, reverb IR, and detune
+   - Voices stop cleanly on release (no background ringing)
+   ========================= */
 
-		.keySpacer {
-			visibility: hidden;
-		}
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioContext({ latencyHint: 'interactive' });
 
-		.keyPressed{
-			background-color: #90224a;
-			box-shadow: 0px 0px 25px #fff;
-		}
+/* ---------- Master chain ---------- */
+const master = ctx.createGain(); master.gain.value = 0.95;
+const compressor = ctx.createDynamicsCompressor();
+compressor.threshold.value = -12; compressor.ratio.value = 6;
+const dry = ctx.createGain(); const wet = ctx.createGain();
+dry.gain.value = 0.72; wet.gain.value = 0.28;
+const convolver = ctx.createConvolver(); convolver.buffer = makeIR(2.4,2.6,false);
+master.connect(dry); master.connect(wet); dry.connect(compressor); wet.connect(convolver); convolver.connect(compressor); compressor.connect(ctx.destination);
 
-		</style>
-	</head>
-<body onkeydown="playNote(event)" onkeyup="stopNote(event)">
+/* UI elements */
+const presetSelect = document.getElementById('presetSelect');
+const reverbBtn = document.getElementById('reverbBtn');
+const sustainBtn = document.getElementById('sustainBtn');
+const stopBtn = document.getElementById('stopBtn');
 
-	<div id="container">
-		<div id="containerW">
-			<div class="keyWhite" id="keyC4"></div>
-			<div class="keyWhite" id="keyD4"></div>
-			<div class="keyWhite" id="keyE4"></div>
-			<div class="keyWhite" id="keyF4"></div>
-			<div class="keyWhite" id="keyG4"></div>
-			<div class="keyWhite" id="keyA4"></div>
-			<div class="keyWhite" id="keyB4"></div>
-			<div class="keyWhite" id="keyC5"></div>
-			<div class="keyWhite" id="keyD5"></div>
-			<div class="keyWhite" id="keyE5"></div>
-			<div class="keyWhite" id="keyF5"></div>
-			<div class="keyWhite" id="keyG5"></div>
-			<div class="keyWhite" id="keyA5"></div>
-			<div class="keyWhite" id="keyB5"></div>
-			<div class="keyWhite" id="keyC6"></div>
-			<div class="keyWhite" id="keyD6"></div>
-			<div class="keyWhite" id="keyE6"></div>
-			<div class="keyWhite" id="keyF6"></div>
-			<div class="keyWhite" id="keyG6"></div>
-			<div class="keyWhite" id="keyA6"></div>
-			<div class="keyWhite" id="keyB6"></div>
-		</div>
-		<div id="containerB">
-			<div class="keyBlack" id="keyC#4"></div>
-			<div class="keyBlack" id="keyEm4"></div>
-			<div class="keyBlack keySpacer"></div>
-			<div class="keyBlack" id="keyF#4"></div>
-			<div class="keyBlack" id="keyAm4"></div>
-			<div class="keyBlack" id="keyBm4"></div>
-			<div class="keyBlack keySpacer"></div>
-			<div class="keyBlack" id="keyC#5"></div>
-			<div class="keyBlack" id="keyEm5"></div>
-			<div class="keyBlack keySpacer"></div>
-			<div class="keyBlack" id="keyF#5"></div>
-			<div class="keyBlack" id="keyAm5"></div>
-			<div class="keyBlack" id="keyBm5"></div>
-			<div class="keyBlack keySpacer"></div>
-			<div class="keyBlack" id="keyC#6"></div>
-			<div class="keyBlack" id="keyEm6"></div>
-			<div class="keyBlack keySpacer"></div>
-			<div class="keyBlack" id="keyF#6"></div>
-			<div class="keyBlack" id="keyAm6"></div>
-			<div class="keyBlack" id="keyBm6"></div>
-		</div>
-	</div>
+/* Reverb and sustain toggles */
+let reverbOn = true, sustainOn = false;
+reverbBtn.addEventListener('click', ()=>{ reverbOn = !reverbOn; wet.gain.value = reverbOn ? 0.28 : 0.0; reverbBtn.textContent = 'Reverb: ' + (reverbOn ? 'On' : 'Off'); });
+sustainBtn.addEventListener('click', toggleSustain);
+stopBtn.addEventListener('click', stopAll);
 
-	<script>
+function toggleSustain(){ sustainOn = !sustainOn; sustainBtn.textContent = sustainOn ? 'On' : 'Off'; if(!sustainOn){ // release sustained
+  for(const [m,v] of sustained) { try{ v.release(); } catch(e){} } sustained.clear(); } }
 
-		var notes = [
-			{code:50, freq: 277, label: "C#4", type: 1},
-			{code:51, freq: 311, label: "Em4", type: 1},
-			{code:53, freq: 367, label: "F#4", type: 1},
-			{code:54, freq: 415, label: "Am4", type: 1},
-			{code:55, freq: 466, label: "Bm4", type: 1},
-			{code:57, freq: 554, label: "C#5", type: 1},
-			{code:48, freq: 622, label: "Em5", type: 1},
-			{code:187, freq: 734, label: "F#5", type: 1},
-			{code:65, freq: 831, label: "Am5", type: 1},
-			{code:83, freq: 932, label: "Bm5", type: 1},
-			{code:70, freq: 1109, label: "C#6", type: 1},
-			{code:71, freq: 1244, label: "Em6", type: 1},
-			{code:74, freq: 1480, label: "F#6", type: 1},
-			{code:75, freq: 1661, label: "Am6", type: 1},
-			{code:76, freq: 1867, label: "Bm6", type: 1},
-			{code:81, freq: 262, label: "C4", type: 0},
-			{code:87, freq: 294, label: "D4", type: 0},
-			{code:69, freq: 330, label: "E4", type: 0},
-			{code:82, freq: 349, label: "F4", type: 0},
-			{code:84, freq: 392, label: "G4", type: 0},
-			{code:89, freq: 440, label: "A4", type: 0},
-			{code:85, freq: 494, label: "B4", type: 0},
-			{code:73, freq: 523, label: "C5", type: 0},
-			{code:79, freq: 587, label: "D5", type: 0},
-			{code:80, freq: 659, label: "E5", type: 0},
-			{code:219, freq: 698, label: "F5", type: 0},
-			{code:221, freq: 784, label: "G5", type: 0},
-			{code:90, freq: 880, label: "A5", type: 0},
-			{code:88, freq: 988, label: "B5", type: 0},
-			{code:67, freq: 1046, label: "C6", type: 0},
-			{code:86, freq: 1176, label: "D6", type: 0},
-			{code:66, freq: 1318, label: "E6", type: 0},
-			{code:78, freq: 1397, label: "F6", type: 0},
-			{code:77, freq: 1568, label: "G6", type: 0},
-			{code:198, freq: 1761, label: "A6", type: 0},
-			{code:190, freq: 1975, label: "B6", type: 0}
-		];
+/* ---------- Preset definitions ----------
+   Each preset is a set of parameters interpreted by the voice generator.
+   Parameters:
+     - partials: array of relative amplitudes for harmonic partials (index 0 = fundamental)
+     - detune: small detune in cents applied to body osc mix
+     - hammerLevel: how loud the hammer/noise transient is
+     - bodyBrightness: multiplier for body filter cut freq
+     - bodyQ: Q factor for body filter
+     - attack/decay/sustain/release: envelope times
+     - metallic: amount of metallic/perc component (for prepared/tack/square)
+     - ir: {duration,decay,reverse} used to generate convolution IR
+*/
+const PRESETS = {
+  "German Grand (Rich)": {
+    partials:[1,0.72,0.42,0.18,0.08,0.04,0.02],
+    detune: 6, hammerLevel:0.9, bodyBrightness:6.4, bodyQ:0.9,
+    adsr:{a:0.002,d:0.28,s:0.36,r:1.3}, metallic:0.02, ir:{d:3.2,decay:3.1,rev:false}
+  },
+  "Steinway-ish Grand": {
+    partials:[1,0.8,0.45,0.22,0.1,0.06,0.03], detune:5, hammerLevel:0.88, bodyBrightness:6.2, bodyQ:1.0,
+    adsr:{a:0.002,d:0.26,s:0.34,r:1.25}, metallic:0.03, ir:{d:2.8,decay:2.8,rev:false}
+  },
+  "Fortepiano (period)": {
+    partials:[1,0.6,0.28,0.12,0.06], detune:2, hammerLevel:0.95, bodyBrightness:4.2, bodyQ:1.1,
+    adsr:{a:0.003,d:0.16,s:0.18,r:0.9}, metallic:0.08, ir:{d:1.6,decay:1.8,rev:false}
+  },
+  "Silent / Muted Piano": {
+    partials:[1,0.45,0.2], detune:0, hammerLevel:0.35, bodyBrightness:1.8, bodyQ:0.8,
+    adsr:{a:0.002,d:0.12,s:0.2,r:0.6}, metallic:0.01, ir:{d:0.6,decay:0.8,rev:false}
+  },
+  "Rhodes Electric": {
+    partials:[1,0.72,0.45,0.18], detune:10, hammerLevel:0.12, bodyBrightness:4.0, bodyQ:0.6,
+    adsr:{a:0.002,d:0.5,s:0.55,r:1.8}, metallic:0.25, ir:{d:1.4,decay:1.8,rev:false}
+  },
+  "Square Piano (Honky-tonk electronic)": {
+    partials:[1,0.3,0.12], detune:0, hammerLevel:0.06, bodyBrightness:8.5, bodyQ:0.6,
+    adsr:{a:0.001,d:0.12,s:0.7,r:0.9}, metallic:0.18, ir:{d:0.8,decay:1.0,rev:false}
+  },
+  "Prepared Piano (metal/percussive)": {
+    partials:[1,0.22,0.18,0.09], detune:18, hammerLevel:0.95, bodyBrightness:12, bodyQ:1.0,
+    adsr:{a:0.0008,d:0.08,s:0.12,r:0.8}, metallic:0.6, ir:{d:1.1,decay:1.1,rev:false}
+  },
+  "Tack Piano (bright, tack on hammer)": {
+    partials:[1,0.85,0.44,0.22,0.1], detune:8, hammerLevel:1.0, bodyBrightness:9.5, bodyQ:1.2,
+    adsr:{a:0.0015,d:0.18,s:0.22,r:0.9}, metallic:0.35, ir:{d:1.8,decay:2.0,rev:false}
+  },
+  "Barrel Piano (toy, percussive)": {
+    partials:[1,0.28,0.14], detune:2, hammerLevel:0.9, bodyBrightness:6.8, bodyQ:0.5,
+    adsr:{a:0.0009,d:0.06,s:0.08,r:0.5}, metallic:0.45, ir:{d:0.9,decay:0.9,rev:false}
+  },
+  "Harpsichord-ish / Plucked": {
+    partials:[1,0.55,0.33,0.18,0.09], detune:0, hammerLevel:0.02, bodyBrightness:9.5, bodyQ:0.5,
+    adsr:{a:0.0005,d:0.02,s:0.02,r:0.4}, metallic:0.22, ir:{d:1.2,decay:0.9,rev:false}
+  },
+  "Prepared + Echoic (experimental)": {
+    partials:[1,0.2,0.15,0.07], detune:24, hammerLevel:1.0, bodyBrightness:14, bodyQ:1.1,
+    adsr:{a:0.0008,d:0.06,s:0.06,r:1.2}, metallic:0.72, ir:{d:3.6,decay:3.4,rev:true}
+  }
+};
 
-		var sustain = 2000;
+/* Populate preset dropdown */
+Object.keys(PRESETS).forEach(name=>{
+  const opt = document.createElement('option'); opt.value = name; opt.textContent = name;
+  presetSelect.appendChild(opt);
+});
+presetSelect.value = "German Grand (Rich)";
 
-		function $(elem){
-			return document.getElementById(elem);
-		}
+presetSelect.addEventListener('change', ()=>{
+  const p = PRESETS[presetSelect.value];
+  // regenerate IR for new preset
+  convolver.buffer = makeIR(p.ir.d, p.ir.decay, p.ir.rev);
+});
 
-		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+/* ---------- Keyboard UI build (88 keys: MIDI 21..108) ---------- */
+const keyboardEl = document.getElementById('keyboard');
+const viewport = document.getElementById('viewport');
 
-		function sound(frequency, duration) {
+const A4 = 440;
+function midiToFreq(m){ return A4 * Math.pow(2, (m - 69) / 12); }
 
+const keyInfo = [];
+for(let m=21;m<=108;m++){
+  const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const name = names[m % 12] + Math.floor(m/12 - 1);
+  const isSharp = names[m % 12].includes('#');
+  const freq = midiToFreq(m);
+  keyInfo.push({midi:m,note:name,freq,isSharp});
+}
 
-			// create Oscillator node
+/* Create white keys then black keys (absolute) */
+const whiteEls = [];
+keyInfo.forEach(k=>{
+  if(!k.isSharp){
+    const w = document.createElement('button');
+    w.className = 'key white';
+    w.dataset.midi = k.midi;
+    w.dataset.freq = k.freq;
+    w.dataset.note = k.note;
+    w.type = 'button';
+    w.innerHTML = `<div class="white-label">${k.note}</div>`;
+    keyboardEl.appendChild(w);
+    whiteEls.push(w);
+  }
+});
+/* black keys appended and positioned later */
+const blackPlacement = []; // {el,betweenWhiteIndex}
+let whiteCount = 0;
+for(let i=0;i<keyInfo.length;i++){
+  const k = keyInfo[i];
+  if(k.isSharp){
+    const b = document.createElement('button');
+    b.className = 'key black';
+    b.dataset.midi = k.midi;
+    b.dataset.freq = k.freq;
+    b.dataset.note = k.note;
+    b.type='button';
+    b.innerHTML = `<div class="black-label">${k.note}</div>`;
+    keyboardEl.appendChild(b);
+    blackPlacement.push({el:b,between: whiteCount}); // between whiteCount-1 and whiteCount
+  } else {
+    whiteCount++;
+  }
+}
 
-			var oscillator = audioCtx.createOscillator();
+/* Position black keys after layout using CSS variables */
+function positionBlack(){
+  const ww = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--white-w')) || 52;
+  const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 6;
+  const bw = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--black-w')) || 34;
+  const pad = 6;
+  blackPlacement.forEach(b=>{
+    const idx = b.between;
+    // left: pad + (idx-1)*(ww+gap) + (ww-bw)/2
+    const left = pad + Math.max(0, idx-1) * (ww + gap) + (ww - bw)/2;
+    b.el.style.left = left + 'px';
+  });
+  // set keyboard min width to fit 52 white keys
+  const total = 52 * ww + 51 * gap + 12;
+  keyboardEl.style.minWidth = total + 'px';
+}
+setTimeout(positionBlack,80);
+window.addEventListener('resize', ()=> setTimeout(positionBlack,90));
 
-			oscillator.type = 'sine';
-			oscillator.frequency.value = frequency;
+/* ---------- Voice management / synthesis engine ---------- */
+const active = new Map();  // midi -> voice
+const sustained = new Map(); // midi -> voice (sustained)
+const cleanupIntervalMs = 2000;
 
-			// value in hertz
+/* create a single voice according to current preset */
+function createVoice(freq, velocity=0.96){
+  const preset = PRESETS[presetSelect.value];
+  const now = ctx.currentTime;
+  const voice = {};
 
-			oscillator.connect(audioCtx.destination);
-			oscillator.start();
+  /* partials - build oscillators for each partial in partials[] */
+  const partials = preset.partials || [1,0.6,0.3];
+  const oscNodes = [];
+  const oscGains = [];
+  partials.forEach((amp, idx)=>{
+    const osc = ctx.createOscillator();
+    // choose shape for different effect: fundamental = sine, others saw/triangle for richness
+    osc.type = (idx===0) ? 'sine' : (preset.metallic > 0.4 ? 'square' : 'sawtooth');
+    const ratio = idx+1; // harmonic ratio
+    osc.frequency.value = freq * ratio;
+    // slight detune applied to non-fundamentals for warmth
+    if(idx>0 && preset.detune){
+      osc.detune.value = ( (idx%2?1:-1) * preset.detune * Math.random() );
+    }
+    const g = ctx.createGain();
+    g.gain.value = amp;
+    osc.connect(g);
+    oscNodes.push(osc); oscGains.push(g);
+  });
 
-	/*		setTimeout(
+  /* Metallic / percussive component (for prepared/tack) */
+  const metallicGain = ctx.createGain(); metallicGain.gain.value = preset.metallic || 0.02;
+  let metallicOsc = null;
+  if((preset.metallic || 0) > 0.015){
+    metallicOsc = ctx.createOscillator();
+    metallicOsc.type = 'square';
+    metallicOsc.frequency.value = freq * ( (Math.random()>0.5) ? 12 : 7 );
+    const mg = ctx.createGain(); mg.gain.value = (preset.metallic || 0.02) * 0.6;
+    metallicOsc.connect(mg);
+    mg.connect(metallicGain);
+    metallicOsc.start(now);
+  }
 
-				function(){
-					oscillator.stop();
-				}, duration);
-	*/
+  /* Hammer noise */
+  const noiseSrc = makeNoiseSource();
+  const noiseFilter = ctx.createBiquadFilter(); noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = Math.max(800, freq * 2.8);
+  const noiseGain = ctx.createGain(); noiseGain.gain.value = 0;
 
-			return oscillator;
-		}
+  /* Body filter + amplitude */
+  const bodyFilter = ctx.createBiquadFilter(); bodyFilter.type = 'lowpass';
+  bodyFilter.frequency.value = Math.max(1200, freq * (preset.bodyBrightness || 6.0));
+  bodyFilter.Q.value = preset.bodyQ || 0.9;
+  const amp = ctx.createGain(); amp.gain.value = 0.0001;
 
-		function getNote(key){
+  /* Routing */
+  oscGains.forEach(g => g.connect(bodyFilter));
+  if(metallicGain) metallicGain.connect(bodyFilter);
+  noiseSrc.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(bodyFilter);
+  bodyFilter.connect(amp);
+  amp.connect(master);
 
-			for(i=0; i<notes.length; i++){
-				if(notes[i].code == key)
-					return i;
-			}
+  /* Start oscillators */
+  oscNodes.forEach(o => o.start(now));
+  noiseSrc.start(now);
 
-			return -1;
-		}
+  /* Envelope (ADSR from preset) */
+  const adsr = preset.adsr || {a:0.002,d:0.18,s:0.28,r:1.0};
+  const peak = Math.max(0.08, 0.9 * velocity);
+  amp.gain.cancelScheduledValues(now);
+  amp.gain.setValueAtTime(0.0001, now);
+  amp.gain.linearRampToValueAtTime(peak, now + adsr.a);
+  amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * adsr.s), now + adsr.a + adsr.d);
 
-		function playNote(event){
+  /* Body filter envelope: bright initial then settle */
+  const baseCut = Math.max(1200, freq * (preset.bodyBrightness || 6.0));
+  bodyFilter.frequency.cancelScheduledValues(now);
+  bodyFilter.frequency.setValueAtTime(baseCut * 0.5, now);
+  bodyFilter.frequency.exponentialRampToValueAtTime(baseCut * 1.0, now + adsr.a + 0.02);
+  bodyFilter.frequency.exponentialRampToValueAtTime(baseCut * 0.55, now + adsr.a + adsr.d + 0.08);
 
-			var key = event.keyCode;
-			
-			if(!event.repeat){
+  /* Hammer noise transient */
+  const hammer = Math.min(1, preset.hammerLevel || 0.9);
+  noiseGain.gain.setValueAtTime(0.0001, now);
+  noiseGain.gain.linearRampToValueAtTime(hammer * peak, now + 0.003);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
 
-				var index = getNote(key);
+  /* Release function */
+  voice.release = function(releaseOverride){
+    const t = ctx.currentTime;
+    const rel = (typeof releaseOverride === 'number') ? releaseOverride : (adsr.r || 1.0);
+    // fade amp
+    amp.gain.cancelScheduledValues(t);
+    amp.gain.setValueAtTime(amp.gain.value, t);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.04, rel));
+    // damp noise quickly
+    noiseGain.gain.cancelScheduledValues(t);
+    noiseGain.gain.setValueAtTime(noiseGain.gain.value, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + Math.min(0.08, rel/3));
+    // stop oscillators and noise after release
+    try{
+      oscNodes.forEach((o, i) => o.stop(t + rel + 0.12 + i*0.01));
+      if(metallicOsc) metallicOsc.stop(t + rel + 0.1);
+      noiseSrc.stop(t + rel + 0.06);
+    }catch(e){}
+    // disconnect later
+    setTimeout(()=> { try{ amp.disconnect(); bodyFilter.disconnect(); noiseFilter.disconnect(); noiseGain.disconnect(); metallicGain.disconnect(); } catch(e){} }, (rel + 0.3)*1000);
+  };
 
-				if(index > -1){
-					if(notes[index].osc)
-						notes[index].osc.stop();
+  voice.amp = amp;
+  voice.noise = noiseSrc;
+  voice.oscs = oscNodes;
+  return voice;
+}
 
-					var osc = sound(notes[index].freq,sustain);
-					notes[index].osc = osc;
-					$("key"+notes[index].label).className = (notes[index].type?"keyBlack":"keyWhite")+" keyPressed";
-				}
-			}
-		}
+/* Utility: noise buffer wrapper similar to earlier implementation */
+function makeNoiseSource(){
+  const bufSize = Math.min(2*ctx.sampleRate, 2*44100);
+  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<bufSize;i++) data[i] = (Math.random()*2 - 1) * Math.pow(1 - i/bufSize, 1.1);
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = false;
+  const out = ctx.createGain(); src.connect(out);
+  return { connect: (dest)=> out.connect(dest), start: (t)=> { try{ src.start(t); } catch(e){} }, stop: (t)=> { try{ src.stop(t); } catch(e){} }, node: src, out };
+}
 
-		function stopNote(event){
+/* Procedural IR generator — varied by preset IR params */
+function makeIR(duration=2.4, decay=2.6, reverse=false){
+  const rate = ctx.sampleRate; const len = Math.floor(rate * duration);
+  const buf = ctx.createBuffer(2, len, rate);
+  for(let ch=0; ch<2; ch++){
+    const data = buf.getChannelData(ch);
+    for(let i=0;i<len;i++){
+      // exponent decay + slight shaping
+      const n = (Math.random()*2 -1) * Math.pow(1 - i/len, decay);
+      data[i] = n * (0.6 + 0.35 * Math.sin(i * (0.0005 + ch*0.00013)));
+    }
+    if(reverse) Array.prototype.reverse.call(data);
+  }
+  return buf;
+}
 
-			var key = event.keyCode;
-			
-			var index = getNote(key);
+/* ---------- Play/stop notes + UI hooks ---------- */
+function noteOn(midi, velocity=0.96){
+  // if already playing, retrigger by releasing quickly
+  if(active.has(midi)){
+    const old = active.get(midi);
+    try{ old.release(0.02); } catch(e){}
+    active.delete(midi);
+  }
+  const ki = keyInfo.find(k=>k.midi===midi);
+  if(!ki) return;
+  ensureAudio();
+  const voice = createVoice(ki.freq, velocity);
+  active.set(midi, voice);
+  // highlight UI
+  const el = document.querySelector(`.key[data-midi="${midi}"]`);
+  if(el) el.classList.add('playing');
+}
 
-			if(index > -1){
-				notes[index].osc.stop();
-				$("key"+notes[index].label).className = (notes[index].type?"keyBlack":"keyWhite");
-			}
-		}
+function noteOff(midi){
+  if(sustainOn){
+    if(active.has(midi)){ sustained.set(midi, active.get(midi)); active.delete(midi); }
+    const el = document.querySelector(`.key[data-midi="${midi}"]`);
+    if(el) el.classList.remove('playing');
+    return;
+  }
+  const v = active.get(midi);
+  if(v){ try{ v.release(); } catch(e){}; active.delete(midi); }
+  const el = document.querySelector(`.key[data-midi="${midi}"]`);
+  if(el) el.classList.remove('playing');
+}
 
-	</script>
+function stopAll(){
+  for(const [m,v] of active){ try{ v.release(0.02); } catch(e){}; active.delete(m); }
+  for(const [m,v] of sustained){ try{ v.release(0.02); } catch(e){}; sustained.delete(m); }
+  document.querySelectorAll('.key.playing').forEach(k=>k.classList.remove('playing'));
+}
+
+/* ---------- Attach pointer/touch handlers to keys ---------- */
+function bindKeyHandlers(){
+  document.querySelectorAll('.key').forEach(el=>{
+    let down=false;
+    el.addEventListener('pointerdown', e=>{
+      e.preventDefault(); ensureAudio();
+      down=true; el.classList.add('playing');
+      const midi = +el.dataset.midi; const pressure = (e.pressure !== undefined) ? e.pressure : 0.95;
+      const vel = Math.max(0.05, Math.min(1, pressure || 0.95)); noteOn(midi, vel);
+      try{ el.setPointerCapture(e.pointerId); } catch(err){}
+    }, {passive:false});
+    el.addEventListener('pointerup', e=>{
+      if(!down) return;
+      down=false; const midi = +el.dataset.midi; el.classList.remove('playing'); noteOff(midi);
+      try{ el.releasePointerCapture(e.pointerId); } catch(err){}
+    }, {passive:false});
+    el.addEventListener('pointercancel', e=>{
+      if(down){ down=false; const midi = +el.dataset.midi; el.classList.remove('playing'); noteOff(midi); }
+    });
+    el.addEventListener('pointerleave', e=>{
+      if(down && e.pressure===0){ down=false; const midi = +el.dataset.midi; el.classList.remove('playing'); noteOff(midi); }
+    });
+  });
+}
+
+/* ---------- Keyboard mapping (playable) ---------- */
+const keyMap = {
+  'Z':48,'S':49,'X':50,'D':51,'C':52,'V':53,'G':54,'B':55,'H':56,'N':57,'J':58,'M':59,',':60,
+  'Q':60,'2':61,'W':62,'3':63,'E':64,'R':65,'5':66,'T':67,'6':68,'Y':69,'7':70,'U':71,'I':72,'9':73,'O':74
+};
+const downKeys = new Set();
+window.addEventListener('keydown', e=>{
+  if(e.repeat) return;
+  const K = e.key.toUpperCase();
+  if(K === ' '){ toggleSustain(); e.preventDefault(); return; }
+  const midi = keyMap[K];
+  if(typeof midi === 'number'){ ensureAudio(); if(!downKeys.has(K)){ downKeys.add(K); const vel = e.shiftKey ? 1 : (e.ctrlKey ? 0.6 : 0.92); noteOn(midi, vel); } e.preventDefault(); }
+});
+window.addEventListener('keyup', e=>{
+  const K = e.key.toUpperCase(); const midi = keyMap[K];
+  if(typeof midi === 'number'){ downKeys.delete(K); noteOff(midi); e.preventDefault(); }
+});
+
+/* ---------- Build DOM key elements with MIDI attrs ---------- */
+(function assignMidiToElements(){
+  // Already created earlier; now set data-midi for black keys appended
+  // We created white keys first, then black buttons appended to keyboardEl.
+  // Now align DOM order to keyInfo sequence and set data-midi properly in case of discrepancies.
+  // This section will find all .key elements and set their data attributes in the correct order by scanning keyInfo.
+  const domKeys = Array.from(document.querySelectorAll('.key'));
+  // domKeys order roughly matches creation; but to be bulletproof, we'll map by note text.
+  keyInfo.forEach(k=>{
+    // find element with matching inner note text and without midi set
+    const el = domKeys.find(d => (d.dataset.note === k.note) && (!d.dataset.midi || +d.dataset.midi !== k.midi));
+    if(el){
+      el.dataset.midi = k.midi;
+      el.dataset.freq = k.freq;
+      el.dataset.note = k.note;
+    }
+  });
+})();
+
+/* attach handlers and position blacks */
+setTimeout(()=>{ positionBlack(); bindKeyHandlers(); centerOnMiddleC(); }, 120);
+
+/* helper to position black keys (recompute if resized) */
+function positionBlack(){
+  const ww = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--white-w')) || 52;
+  const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 6;
+  const bw = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--black-w')) || 34;
+  const pad = 6;
+  // build white DOM order
+  const whites = Array.from(document.querySelectorAll('.key.white'));
+  // compute running index to know between which whites each black should sit
+  let wi = 0;
+  for(let i=0;i<keyInfo.length;i++){
+    const k = keyInfo[i];
+    if(k.isSharp){
+      const left = pad + Math.max(0, wi-1) * (ww + gap) + (ww - bw)/2;
+      const bel = document.querySelector(`.key.black[data-note="${k.note}"]`);
+      if(bel) bel.style.left = left + 'px';
+    } else { wi++; }
+  }
+  const total = 52 * ww + 51 * gap + 12;
+  keyboardEl.style.minWidth = total + 'px';
+}
+
+/* center viewport on middle C */
+function centerOnMiddleC(){
+  const mid = document.querySelector('.key[data-midi="60"]');
+  if(mid){ const vp = viewport; const offset = (mid.offsetLeft + mid.offsetWidth/2) - (vp.clientWidth/2); vp.scrollLeft = Math.max(0, offset); }
+}
+
+/* ensure audio context unlocked */
+function ensureAudio(){ if(ctx.state === 'suspended') ctx.resume(); }
+
+/* periodic cleanup to avoid mem leak of voices already released */
+setInterval(()=> {
+  for(const [m, v] of active){
+    try{ if(v.amp && v.amp.gain && v.amp.gain.value < 0.00005) active.delete(m); } catch(e){}
+  }
+  for(const [m, v] of sustained){
+    try{ if(v.amp && v.amp.gain && v.amp.gain.value < 0.00005) sustained.delete(m); } catch(e){}
+  }
+}, cleanupIntervalMs);
+
+/* stop all on blur / mouse up (safety) */
+window.addEventListener('blur', stopAll);
+document.addEventListener('mouseup', stopAll);
+document.addEventListener('touchend', stopAll);
+
+/* initial reverb preset application */
+convolver.buffer = makeIR(PRESETS[presetSelect.value].ir.d, PRESETS[presetSelect.value].ir.decay, PRESETS[presetSelect.value].ir.rev);
+
+/* done */
+console.log('Piano ready — preset:', presetSelect.value);
+
+</script>
 </body>
 </html>
